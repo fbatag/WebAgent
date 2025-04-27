@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImagEasy</title>
+
+    <!-- Widget JavaScript bundle -->
+    <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=pt-BR"></script>
+
+    <!-- Search widget element is not visible by default -->
+    <gen-search-widget
+    configId="d47b7c6b-e5b1-4b75-b4ee-99981b49cc31"
+    triggerId="searchWidgetTrigger">
+    </gen-search-widget>
+</head>
+
+<body>
+    <form id="index_form" action="/" method="POST" enctype="multipart/form-data">
+        <!-- Element that opens the widget on click. It does not have to be an input -->
+        <input placeholder="Busca cirurgias" id="searchWidgetTrigger" />
+     
+    </form>
+
+
+    <script src="{{ url_for('static', filename='upload.js') }}"></script>
+    <script>
+        const form = document.querySelector("form");
+
+    </script>
+</body>
+
+</html>
