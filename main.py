@@ -10,13 +10,10 @@ timezone = None
 def get_user_version_info():
     return "User: " + get_iap_user() + " -  Version: 1.0.0"
 
-@app.route("/getSignedUrl", methods=["GET"])
+@app.route("/getAuthToken", methods=["GET"])
 def getSignedUrl():
     print("METHOD: getSignedUrl")
-    print(request.args)
-    dest_bucket_name = request.args.get("dest_bucket")
-    dest_object = request.args.get("dest_object")
-    filetype = request.args.get("filetype")
+
     return getSignedUrlParam(dest_bucket_name, dest_object, filetype)
 
 
@@ -27,7 +24,8 @@ def index():
 
 def renderIndex(page="index.html"):
     print("METHOD: renderIndex -> ")
-    return render_template(page, user_version_info=get_user_version_info())
+    jwtoken = request.headers.get('X-Goog-Iap-Jwt-Assertion', "None")
+    return render_template(page, user_version_info=get_user_version_info(), jwtoken=jwtoken)
 
 if __name__ == "__main__":
     app.run(debug=True)

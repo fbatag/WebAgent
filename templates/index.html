@@ -5,30 +5,35 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ImagEasy</title>
+    <title>WebAgent</title>
 
     <!-- Widget JavaScript bundle -->
     <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=pt-BR"></script>
 
     <!-- Search widget element is not visible by default -->
-    <gen-search-widget
-    configId="d47b7c6b-e5b1-4b75-b4ee-99981b49cc31"
-    triggerId="searchWidgetTrigger">
+    <gen-search-widget configId="3ed46650-16b3-4aa6-9234-1a2d737b3b1c" triggerId="searchWidgetTrigger" authToken="{{ jwt_token }}">
     </gen-search-widget>
 </head>
 
 <body>
     <form id="index_form" action="/" method="POST" enctype="multipart/form-data">
+        <div>
+            <b style="float: right; text-align: right;">{{ user_version_info }}</b>
+        </div>
         <!-- Element that opens the widget on click. It does not have to be an input -->
-        <input placeholder="Busca cirurgias" id="searchWidgetTrigger" />
-     
+        <div>
+            <input placeholder="Busca cirurgias" id="searchWidgetTrigger" />
+        </div>
+
     </form>
 
-
-    <script src="{{ url_for('static', filename='upload.js') }}"></script>
     <script>
         const form = document.querySelector("form");
 
+        // Ask the authorization token for the application
+        // Set authorization token.
+        //const searchWidget = document.querySelector('gen-search-widget');
+        //searchWidget.authToken = "<JWT or OAuth token provided by your backend>";    
     </script>
 </body>
 
