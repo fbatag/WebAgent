@@ -7,6 +7,23 @@ from google.cloud import storage
 storage_client = storage.Client()
 local_cred_file = os.environ.get("HOME") +"/.config/gcloud/imageasy_sa.json"
 
+def getSaAcessToken():
+    print("METHOD: getSaAcessToken")
+    credentials, project_id = auth.default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
+    #credentials, project_id = auth.default()
+    #if credentials.token is None:
+    credentials.refresh(auth.transport.requests.Request())
+    print("Using service account")
+    print(credentials.service_account_email)
+    print("TODO REMOVER _ TOKEN")
+    print(credentials.token)
+    try:
+        print(credentials.expired)
+    except Exception as e:
+        print(e)
+    return credentials.token
+
+
 def get_project_Id():
     return storage_client.project
 
@@ -40,14 +57,8 @@ def getSignedUrlParam(dest_bucket_name, dest_object, filetype):
                                     credentials=service_account.Credentials.from_service_account_file(local_cred_file),
                                     headers={"X-Goog-Content-Length-Range": "1,5000000000", 'Content-Type': filetype})
     else:
-        print("CREDENTIALS")
-        credentials, project_id = auth.default()
-        #if credentials.token is None:
-        credentials.refresh(auth.transport.requests.Request())
-        print("Using service account")
-        print(credentials.service_account_email)
         signeUrl = blob.generate_signed_url(method='PUT', version="v4", expiration=expiration, content_type=filetype, 
-                                    service_account_email=credentials.service_account_email, access_token=credentials.token,
+                                    service_account_email=credentials.service_account_email, access_token=getSaAcessToken(),
                                     headers={"X-Goog-Content-Length-Range": "1,5000000000", 'Content-Type': filetype})
         #except Exception as e:
         #    print(e)

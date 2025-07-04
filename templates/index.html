@@ -11,8 +11,10 @@
     <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=pt-BR"></script>
 
     <!-- Search widget element is not visible by default -->
-    <gen-search-widget configId="3ed46650-16b3-4aa6-9234-1a2d737b3b1c" triggerId="searchWidgetTrigger" authToken="{{ jwt_token }}">
+    <!-- gen-search-widget configId="3ed46650-16b3-4aa6-9234-1a2d737b3b1c" triggerId="searchWidgetTrigger" authToken="{{ jwt_token }}"-->
+    <gen-search-widget configId="d47b7c6b-e5b1-4b75-b4ee-99981b49cc31" triggerId="searchWidgetTrigger">
     </gen-search-widget>
+    <!--input type="hidden" id="jwt_token" name="jwt_token" value="{{ jwt_token }}"-->
 </head>
 
 <body>
@@ -22,18 +24,110 @@
         </div>
         <!-- Element that opens the widget on click. It does not have to be an input -->
         <div>
-            <input placeholder="Busca cirurgias" id="searchWidgetTrigger" />
+            <input placeholder="Mundo real" id="searchWidgetTrigger" />
+        </div>
+        </br>
+        <div>
+            <input type="file" id="audioFile" accept="audio/*">
+            <button type="button" id="callAnamneasyButton">Anamneasy Audio</button>
+            <button type="button" id="callAnamneasyTeleButton">Anamneasy-tele Audio</button>
+        </div>
+        </br></br>
+        <div>
+            <input type="file" id="imageFile" accept="image/*, pdf/*">
+            <button type="button" id="sendImageButton">Send Image</button>
+            <button type="button" id="sendImageDataButton">Send Image Data</button>
         </div>
 
     </form>
 
     <script>
-        const form = document.querySelector("form");
+        const token = "TOKEN";
+        const anamneasy_api = "https://anamneasy-484116905177.us-central1.run.app/"
+        const anamneasy_tele_api = "https://anamneasy-tele-484116905177.us-central1.run.app/"
+        const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
+
+        //const form = document.querySelector("form");
+
+        const audioFileInput = document.getElementById("audioFile");
+        document.getElementById("callAnamneasyButton").addEventListener("click", function() {
+            sendFile(anamneasy_api, audioFileInput);
+        });
+        document.getElementById("callAnamneasyTeleButton").addEventListener("click", function() {
+            sendFile(anamneasy_tele_api, audioFileInput);
+        });
+
+        const imageFile = document.getElementById("imageFile");
+        document.getElementById("sendImageButton").addEventListener("click", function() {
+            sendFile(exameasy_api, imageFile);
+        });
+        document.getElementById("sendImageDataButton").addEventListener("click", function() {
+            sendFile(exameasy_api, imageFile, true);
+        });
+
+        async function sendFile(api, file_input, asData = false) {
+            const file = file_input.files[0];
+            if (!file) {
+                alert("Please select an image file first.");
+                return;
+            }
+            if (!asData) {
+                const formData = new FormData();
+                formData.append("file", file, file.name);
+                await callApi(api, formData);
+            }
+            else {
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    // reader.result contains the Base64 string
+                    console.log('File as Base64:', reader.result);
+                    // You could now set this on your 'arquivo' object
+                    // arquivo.fileBase64 = ;
+                    const formData = new FormData();
+                    formData.append("filename", file.name);
+                    formData.append("filedata", reader.result);
+                    await callApi(exameasy_api, formData);
+                }
+                reader.onerror = (error) => {
+                    console.error('Error reading file:', error);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function callApi(api, formData) {
+            console.log(api);
+            try {
+                const response = await fetch(api, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: formData,
+                });
+                if (response.ok) {
+                    const result = await response.text();
+                    console.log("API call successful: result ", result);
+                    alert("File uploaded and API called successfully! Check console for response.");
+                } else {
+                    const errorText = await response.text();
+                    console.error("API call failed:", response.status, errorText);
+                    alert(`API call failed: ${response.status} - ${errorText}`);
+                }
+            } catch (error) {
+                console.error("Error during API call:", error);
+                alert("An error occurred during the API call.");
+            }
+        }
+
+        // Assume you have <input type="file" id="fileInput"> in your HTML
+
 
         // Ask the authorization token for the application
         // Set authorization token.
+        //const jwt_token = document.getElementById("jwt_token").value;
         //const searchWidget = document.querySelector('gen-search-widget');
-        //searchWidget.authToken = "<JWT or OAuth token provided by your backend>";    
+        //searchWidget.authToken = jwt_token;    
     </script>
 </body>
 
