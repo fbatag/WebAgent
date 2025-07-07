@@ -34,14 +34,16 @@
         </div>
         </br></br>
         <div>
-            <input type="file" id="imageFile" accept="image/*, pdf/*">
+            <input type="file" id="imageFile" accept="image/*, application/pdf">
             <button type="button" id="sendImageButton">Send Image</button>
             <button type="button" id="sendImageDataButton">Send Image Data</button>
         </div>
+        </br></br>
 
+        <pre id="api_result"></pre>
     </form>
 
-    <script>
+   <script>
         const token = "TOKEN";
         const anamneasy_api = "https://anamneasy-484116905177.us-central1.run.app/"
         const anamneasy_tele_api = "https://anamneasy-tele-484116905177.us-central1.run.app/"
@@ -71,8 +73,8 @@
                 alert("Please select an image file first.");
                 return;
             }
+            const formData = new FormData();
             if (!asData) {
-                const formData = new FormData();
                 formData.append("file", file, file.name);
                 await callApi(api, formData);
             }
@@ -80,10 +82,10 @@
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     // reader.result contains the Base64 string
-                    console.log('File as Base64:', reader.result);
+                    console.log('File contet size:', reader.result.length);
+                    //console.log('File as Base64:', reader.result);
                     // You could now set this on your 'arquivo' object
                     // arquivo.fileBase64 = ;
-                    const formData = new FormData();
                     formData.append("filename", file.name);
                     formData.append("filedata", reader.result);
                     await callApi(exameasy_api, formData);
@@ -94,6 +96,8 @@
                 reader.readAsDataURL(file);
             }
         }
+
+        const apiResultElement = document.getElementById("api_result");
 
         async function callApi(api, formData) {
             console.log(api);
@@ -107,8 +111,10 @@
                 });
                 if (response.ok) {
                     const result = await response.text();
-                    console.log("API call successful: result ", result);
-                    alert("File uploaded and API called successfully! Check console for response.");
+                    apiResultElement.textContent = result;
+                    console.log("API call successful !!");
+                    //console.log("API call successful: result ", result);
+                    //alert("File uploaded and API called successfully! Check console for response.");
                 } else {
                     const errorText = await response.text();
                     console.error("API call failed:", response.status, errorText);
