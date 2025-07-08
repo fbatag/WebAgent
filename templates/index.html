@@ -35,8 +35,9 @@
         </br></br>
         <div>
             <input type="file" id="imageFile" accept="image/*, application/pdf">
-            <button type="button" id="sendImageButton">Send Image</button>
-            <button type="button" id="sendImageDataButton">Send Image Data</button>
+            <button type="button" id="sendImageFileButton">Send Image File</button>
+            <button type="button" id="sendImageBase64Button">Send Image Base64</button>
+            <button type="button" id="sendImageBinaryButton">Send Image Binary</button>
         </div>
         </br></br>
 
@@ -50,7 +51,11 @@
         const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
 
         //const form = document.querySelector("form");
-
+        const SendingType = {
+            FILE: 'File',
+            BASE_64: 'Base64',
+            BINARY: 'Binary'
+        };
         const audioFileInput = document.getElementById("audioFile");
         document.getElementById("callAnamneasyButton").addEventListener("click", function() {
             sendFile(anamneasy_api, audioFileInput);
@@ -60,21 +65,27 @@
         });
 
         const imageFile = document.getElementById("imageFile");
-        document.getElementById("sendImageButton").addEventListener("click", function() {
-            sendFile(exameasy_api, imageFile);
+        document.getElementById("sendImageFileButton").addEventListener("click", function() {
+            sendFile(exameasy_api, imageFile, SendingType.FILE);
         });
-        document.getElementById("sendImageDataButton").addEventListener("click", function() {
-            sendFile(exameasy_api, imageFile, true);
+        document.getElementById("sendImageBase64Button").addEventListener("click", function() {
+            sendFile(exameasy_api, imageFile, SendingType.BASE_64);
+        });
+        document.getElementById("sendImageBinaryButton").addEventListener("click", function() {
+            sendFile(exameasy_api, imageFile, SendingType.BINARY);
         });
 
-        async function sendFile(api, file_input, asData = false) {
+
+        async function sendFile(api, file_input, sendingType) {
+            apiResultElement.textContent = "";
             const file = file_input.files[0];
             if (!file) {
                 alert("Please select an image file first.");
                 return;
             }
+            console.log("File ", file.name, " type: ", file.type, " size: ", file.size);
             const formData = new FormData();
-            if (!asData) {
+            if (sendingType === SendingType.FILE) {
                 formData.append("file", file, file.name);
                 await callApi(api, formData);
             }
@@ -82,18 +93,29 @@
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     // reader.result contains the Base64 string
-                    console.log('File contet size:', reader.result.length);
-                    //console.log('File as Base64:', reader.result);
-                    // You could now set this on your 'arquivo' object
-                    // arquivo.fileBase64 = ;
-                    formData.append("filename", file.name);
-                    formData.append("filedata", reader.result);
+                    console.log('File contet size:', reader.result.length? reader.result.length : reader.result.byteLength);
+                    console.log('File as data:', reader.result);
+                    if (sendingType === SendingType.BASE_64) {
+                        formData.append("filedata", reader.result);
+                    } else if (sendingType === SendingType.BINARY) {
+                        const blob = new Blob([reader.result], { type: "application/octet-stream" });
+                        formData.append("filedata", blob);
+                    }
                     await callApi(exameasy_api, formData);
                 }
                 reader.onerror = (error) => {
                     console.error('Error reading file:', error);
                 };
-                reader.readAsDataURL(file);
+                formData.append("filename", file.name);
+                formData.append("filetype", file.type);
+                if (sendingType === SendingType.BASE_64) {
+                    //formData.append("datatype", SendingType.BASE_64);
+                    reader.readAsDataURL(file);
+                }
+                else if (sendingType === SendingType.BINARY) {
+                    //formData.append("datatype", SendingType.BINARY);
+                    reader.readAsArrayBuffer(file);
+                }
             }
         }
 
