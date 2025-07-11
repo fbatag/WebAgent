@@ -48,7 +48,8 @@
         const token = "TOKEN";
         const anamneasy_api = "https://anamneasy-484116905177.us-central1.run.app/"
         const anamneasy_tele_api = "https://anamneasy-tele-484116905177.us-central1.run.app/"
-        const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
+        //const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
+        const exameasy_api = "http://127.0.0.1:8080/"
 
         //const form = document.querySelector("form");
         const SendingType = {
@@ -96,18 +97,17 @@
                     console.log('File contet size:', reader.result.length? reader.result.length : reader.result.byteLength);
                     console.log('File as data:', reader.result);
                     if (sendingType === SendingType.BASE_64) {
+                        formData.append("filename", file.name);
                         formData.append("filedata", reader.result);
                     } else if (sendingType === SendingType.BINARY) {
                         const blob = new Blob([reader.result], { type: "application/octet-stream" });
-                        formData.append("filedata", blob);
+                        formData.append(file.name, blob);
                     }
                     await callApi(exameasy_api, formData);
                 }
                 reader.onerror = (error) => {
                     console.error('Error reading file:', error);
                 };
-                formData.append("filename", file.name);
-                formData.append("filetype", file.type);
                 if (sendingType === SendingType.BASE_64) {
                     //formData.append("datatype", SendingType.BASE_64);
                     reader.readAsDataURL(file);
