@@ -53,7 +53,7 @@
         </div>
     </form>
 
-   <script>
+    <script>
         const token = "TOKEN";
         const anamneasy_api = "https://anamneasy-484116905177.us-central1.run.app/"
         const anamneasy_tele_api = "https://anamneasy-tele-484116905177.us-central1.run.app/"
@@ -67,10 +67,10 @@
             BINARY: 'Binary'
         };
         const audioFileInput = document.getElementById("audioFile");
-        document.getElementById("callAnamneasyButton").addEventListener("click", function() {
+        document.getElementById("callAnamneasyButton").addEventListener("click", function () {
             sendFile(anamneasy_api, audioFileInput);
         });
-        document.getElementById("callAnamneasyTeleButton").addEventListener("click", function() {
+        document.getElementById("callAnamneasyTeleButton").addEventListener("click", function () {
             sendFile(anamneasy_tele_api, audioFileInput);
         });
 
@@ -78,28 +78,27 @@
         const imagePreviewElement = document.getElementById("image_preview");
         const apiResultElement = document.getElementById("api_result");
 
-        imageFile.addEventListener("change", function() {
+        imageFile.addEventListener("change", function () {
             const file = this.files[0];
             if (file) {
-                imagePreviewElement.src = URL.createObjectURL(file);
-                imagePreviewElement.style.display = "block";
+                if (file.type.startsWith("image/")) {
+                    apiResultElement.textContent = "";
+                    imagePreviewElement.src = URL.createObjectURL(file);
+                    imagePreviewElement.style.display = "block";
+                }
             }
         });
 
-        document.getElementById("sendImageFileButton").addEventListener("click", function() {
+        document.getElementById("sendImageFileButton").addEventListener("click", function () {
             sendFile(exameasy_api, imageFile, SendingType.FILE);
         });
-        document.getElementById("sendImageBase64Button").addEventListener("click", function() {
+        document.getElementById("sendImageBase64Button").addEventListener("click", function () {
             sendFile(exameasy_api, imageFile, SendingType.BASE_64);
         });
-        document.getElementById("sendImageBinaryButton").addEventListener("click", function() {
+        document.getElementById("sendImageBinaryButton").addEventListener("click", function () {
             sendFile(exameasy_api, imageFile, SendingType.BINARY);
         });
 
-        function fillImagePreview(file) {
-            if (file.type.startsWith("image/")) {
-            }
-        }
 
         async function sendFile(api, file_input, sendingType) {
             apiResultElement.textContent = "";
@@ -117,7 +116,7 @@
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     // reader.result contains the file content
-                    console.log('File contet size:', reader.result.length? reader.result.length : reader.result.byteLength);
+                    console.log('File contet size:', reader.result.length ? reader.result.length : reader.result.byteLength);
                     console.log('File as data:', reader.result);
                     if (sendingType === SendingType.BASE_64) {
                         formData.append("filename", file.name);
