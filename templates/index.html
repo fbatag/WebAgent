@@ -41,7 +41,16 @@
         </div>
         </br></br>
 
-        <pre id="api_result"></pre>
+        <div style="display: flex; gap: 20px; width: 100%;">
+            <div style="flex: 1; overflow-x: auto;">
+                <h3>Image Preview</h3>
+                <img id="image_preview" style="max-width: 100%; height: auto; display: none;" alt="Image preview">
+            </div>
+            <div style="flex: 1; overflow-x: auto;">
+                <h3>API Result</h3>
+                <pre id="api_result" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+            </div>
+        </div>
     </form>
 
    <script>
@@ -66,6 +75,17 @@
         });
 
         const imageFile = document.getElementById("imageFile");
+        const imagePreviewElement = document.getElementById("image_preview");
+        const apiResultElement = document.getElementById("api_result");
+
+        imageFile.addEventListener("change", function() {
+            const file = this.files[0];
+            if (file) {
+                imagePreviewElement.src = URL.createObjectURL(file);
+                imagePreviewElement.style.display = "block";
+            }
+        });
+
         document.getElementById("sendImageFileButton").addEventListener("click", function() {
             sendFile(exameasy_api, imageFile, SendingType.FILE);
         });
@@ -76,6 +96,10 @@
             sendFile(exameasy_api, imageFile, SendingType.BINARY);
         });
 
+        function fillImagePreview(file) {
+            if (file.type.startsWith("image/")) {
+            }
+        }
 
         async function sendFile(api, file_input, sendingType) {
             apiResultElement.textContent = "";
@@ -89,11 +113,10 @@
             if (sendingType === SendingType.FILE) {
                 formData.append("file", file, file.name);
                 await callApi(api, formData);
-            }
-            else {
+            } else {
                 const reader = new FileReader();
                 reader.onloadend = async () => {
-                    // reader.result contains the Base64 string
+                    // reader.result contains the file content
                     console.log('File contet size:', reader.result.length? reader.result.length : reader.result.byteLength);
                     console.log('File as data:', reader.result);
                     if (sendingType === SendingType.BASE_64) {
@@ -118,8 +141,6 @@
                 }
             }
         }
-
-        const apiResultElement = document.getElementById("api_result");
 
         async function callApi(api, formData) {
             console.log(api);
