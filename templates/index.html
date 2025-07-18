@@ -81,8 +81,9 @@
         imageFile.addEventListener("change", function () {
             const file = this.files[0];
             if (file) {
+                imagePreviewElement.style.display = "none";
+                apiResultElement.textContent = "";
                 if (file.type.startsWith("image/")) {
-                    apiResultElement.textContent = "";
                     imagePreviewElement.src = URL.createObjectURL(file);
                     imagePreviewElement.style.display = "block";
                 }
