@@ -46,9 +46,13 @@ body {
   }
   
   .form-box {
-    border: 2px solid lightgrey;
+    border: 2px solid rgb(176, 176, 176);
     padding: 10px;
     background-color: lightgray;
+  }
+
+  .form-box h3 {
+    color: #333;
   }
 
   .form-list {
