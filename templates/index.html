@@ -61,8 +61,8 @@
         const token = "TOKEN";
         const anamneasy_api = "https://anamneasy-484116905177.us-central1.run.app/"
         const anamneasy_tele_api = "https://anamneasy-tele-484116905177.us-central1.run.app/"
-        //const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
-        const exameasy_api = "http://127.0.0.1:8080/"
+        const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
+        //const exameasy_api = "http://127.0.0.1:8080/"
 
         //const form = document.querySelector("form");
 
@@ -151,7 +151,7 @@
             console.log("File ", file.name, " type: ", file.type, " size: ", file.size);
             const formData = new FormData();
             if (sendingType === SendingType.FILE) {
-                formData.append("file", file, file.name);
+                formData.append(file.name, file);
                 await callApi(api, formData);
             } else {
                 const reader = new FileReader();
