@@ -93,6 +93,13 @@ body {
     cursor: pointer;
   }
 
+  button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    border-color: #999999;
+  }
+
   .btn-file {
     background-color: blue;
     color: white;

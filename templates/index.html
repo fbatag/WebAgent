@@ -61,8 +61,8 @@
         const token = "TOKEN";
         const anamneasy_api = "https://anamneasy-484116905177.us-central1.run.app/"
         const anamneasy_tele_api = "https://anamneasy-tele-484116905177.us-central1.run.app/"
-        const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
-        //const exameasy_api = "http://127.0.0.1:8080/"
+        //const exameasy_api = "https://exameasy-484116905177.us-central1.run.app/"
+        const exameasy_api = "http://127.0.0.1:8080/"
 
         //const form = document.querySelector("form");
 
@@ -140,12 +140,26 @@
             }
         });
 
+        function setButtonsState(api, disabled) {
+            if (api === exameasy_api) {
+                document.getElementById("sendImageFileButton").disabled = disabled;
+                document.getElementById("sendImageBinaryButton").disabled = disabled;
+                document.getElementById("sendImageLoopButton").disabled = disabled;
+            } else {
+                document.getElementById("callAnamneasyButton").disabled = disabled;
+                document.getElementById("callAnamneasyTeleButton").disabled = disabled;
+            }
+        }
 
         async function sendFile(api, file_input, sendingType = SendingType.FILE) {
-            apiExamResultElement.textContent = "";
+            // Disable buttons to prevent multiple submissions while processing
+            setButtonsState(api, true);
+            apiExamResultElement.textContent = "Processsando....por favor, espere.";
             const file = file_input.files[0];
             if (!file) {
-                alert("Please select an image file first.");
+                alert("Please select a file first.");
+                // Re-enable buttons as the process is aborted
+                setButtonsState(api, false);
                 return;
             }
             console.log("File ", file.name, " type: ", file.type, " size: ", file.size);
@@ -167,6 +181,8 @@
                 }
                 reader.onerror = (error) => {
                     console.error('Error reading file:', error);
+                    // Re-enable buttons on file read error, as the API call won't be made.
+                setButtonsState(api, false);
                 };
                 if (sendingType === SendingType.BINARY) {
                     //formData.append("datatype", SendingType.BINARY);
@@ -195,18 +211,24 @@
                     //console.log("API call successful: result ", result);
                     //alert("File uploaded and API called successfully! Check console for response.");
                 } else {
-                    const errorText = await response.text();
-                    console.error("API call failed:", response.status, errorText);
-                    alert(`API call failed: ${response.status} - ${errorText}`);
+                    const serverError = await response.text();
+                    const errorText = `API call failed: ${response.status} - ${serverError}`
+                    //console.error(errorText);
+                    alert(errorText);
+                    apiExamResultElement.textContent = errorText;
                 }
             } catch (error) {
-                console.error("Error during API call:", error);
-                alert("An error occurred during the API call.");
+                const errorText = `API call failed: ${error}`
+                //console.error(errorText);
+                alert(errorText);
+                apiExamResultElement.textContent = errorText;
+            } finally {
+                // Re-enable the buttons after the API call is finished (either success or failure).
+                setButtonsState(api, false);
             }
         }
 
         // Assume you have <input type="file" id="fileInput"> in your HTML
-
 
         // Ask the authorization token for the application
         // Set authorization token.
