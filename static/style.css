@@ -237,3 +237,16 @@ thead {
 tfoot {
   border-top: 1px solid black;
 }
+
+#image-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.image-and-result-visualization {
+  display: flex;
+  gap: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+}

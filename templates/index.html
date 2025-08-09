@@ -9,6 +9,10 @@
 
     <!-- Widget JavaScript bundle -->
     <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=pt-BR"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js";
+    </script>
 
     <!-- Search widget element is not visible by default -->
     <!-- gen-search-widget configId="3ed46650-16b3-4aa6-9234-1a2d737b3b1c" triggerId="searchWidgetTrigger" authToken="{{ jwt_token }}"-->
@@ -29,7 +33,7 @@
         <div class="form-box">
             <input type="file" id="audioFile" accept="audio/*">
             <button type="button" id="callAnamneasyButton">Anamneasy Audio</button>
-            <button type="button" id="callAnamneasyTeleButton">Anamneasy-tele Audio</button>Bel
+            <button type="button" id="callAnamneasyTeleButton">Anamneasy-tele Audio</button>
         </div>
         <div class="form-box">
             <h3>API Result</h3>
@@ -41,11 +45,12 @@
             <input type="file" id="imageFile">
             <button type="button" id="sendImageFileButton">Send Image File</button>
             <button type="button" id="sendImageBinaryButton">Send Image Binary</button>
+            <button type="button" id="sendImageFolderButton">Send Image Folder</button>
             <button type="button" id="sendImageLoopButton">Send Image Loop</button>
             <label for="loopIntervalInput">Interval (s):</label>
             <input type="number" id="loopIntervalInput" value="0" min="0" style="width: 40px;">
         </div>
-        <div class="form-box" style="display: flex; gap: 10px;">
+        <div id="imageAndResultVisualization" class="form-box" style="display: flex; gap: 10px;">
             <div style="flex: 1; overflow-x: auto;">
                 <h3>Image Preview</h3>
                 <img id="image_preview" style="max-width: 100%; height: auto; display: none;" alt="Image preview">
@@ -55,6 +60,7 @@
                 <pre id="exameasyResult" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
             </div>
         </div>
+        <div id="image-container"></div>
     </form>
 
     <script>
@@ -109,6 +115,58 @@
         document.getElementById("sendImageBinaryButton").addEventListener("click", function () {
             sendFile(exameasy_api, imageFile, SendingType.BINARY);
         });
+
+        document.getElementById("sendImageFolderButton").addEventListener("click", async function () {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.webkitdirectory = true;
+            input.onchange = async e => {
+                const files = e.target.files;
+                const imageContainer = document.getElementById('image-container');
+                imageContainer.innerHTML = ''; // Clear previous results
+                for (const file of files) {
+                    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+                        const fileElement = document.createElement('div');
+                        fileElement.className = 'image-and-result-visualization';
+                        fileElement.innerHTML = `
+                            <div style="flex: 1; overflow-x: auto;">
+                                <h3>${file.webkitRelativePath} - Image Preview</h3>
+                                <img style="max-width: 100%; height: auto;" alt="${file.name}">
+                            </div>
+                            <div style="flex: 1; overflow-x: auto;">
+                                <h3>API Result</h3>
+                                <pre style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                            </div>
+                        `;
+                        imageContainer.appendChild(fileElement);
+
+                        const imgElement = fileElement.querySelector('img');
+                        if (file.type === 'application/pdf') {
+                            /*const reader = new FileReader();
+                            reader.onload = async function(event) {
+                                const pdfData = new Uint8Array(event.target.result);
+                                const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
+                                const page = await pdf.getPage(1);
+                                const viewport = page.getViewport({scale: 1.5});
+                                const canvas = document.createElement('canvas');
+                                const context = canvas.getContext('2d');
+                                canvas.height = viewport.height;
+                                canvas.width = viewport.width;
+                                await page.render({canvasContext: context, viewport: viewport}).promise;
+                                imgElement.src = canvas.toDataURL();
+                            };
+                            reader.readAsArrayBuffer(file);*/
+                        } else {
+                            imgElement.src = URL.createObjectURL(file);
+                        }
+
+                        const apiResultElement = fileElement.querySelector('pre');
+                        await sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);
+                    }
+                }
+            };
+            input.click();
+        });
         document.getElementById("sendImageLoopButton").addEventListener("click", function () {
             if (isLooping) {
                 // Stop the loop
@@ -144,6 +202,7 @@
             if (api === exameasy_api) {
                 document.getElementById("sendImageFileButton").disabled = disabled;
                 document.getElementById("sendImageBinaryButton").disabled = disabled;
+                document.getElementById("sendImageFolderButton").disabled = disabled;
                 document.getElementById("sendImageLoopButton").disabled = disabled;
             } else {
                 document.getElementById("callAnamneasyButton").disabled = disabled;
@@ -151,33 +210,33 @@
             }
         }
 
-        async function sendFile(api, file_input, sendingType = SendingType.FILE) {
+        async function sendFile(api, file_input, sendingType = SendingType.FILE, apiResultElement = apiExamResultElement) {
             // Disable buttons to prevent multiple submissions while processing
             setButtonsState(api, true);
-            apiExamResultElement.textContent = "Processsando....por favor, espere.";
-            const file = file_input.files[0];
+            const file = file_input.files ? file_input.files[0] : file_input;
             if (!file) {
                 alert("Please select a file first.");
                 // Re-enable buttons as the process is aborted
                 setButtonsState(api, false);
                 return;
             }
+            apiResultElement.textContent = "Processsando....por favor, espere.";
             console.log("File ", file.name, " type: ", file.type, " size: ", file.size);
             const formData = new FormData();
             if (sendingType === SendingType.FILE) {
                 formData.append(file.name, file);
-                await callApi(api, formData);
+                await callApi(api, formData, apiResultElement);
             } else {
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     // reader.result contains the file content
-                    console.log('File contet size:', reader.result.length ? reader.result.length : reader.result.byteLength);
+                    //console.log('File contet size:', reader.result.length ? reader.result.length : reader.result.byteLength);
                     //console.log('File as data:', reader.result);
                     if (sendingType === SendingType.BINARY) {
                         const blob = new Blob([reader.result], { type: "application/octet-stream" });
                         formData.append(file.name, blob);
                     }
-                    await callApi(api, formData);
+                    await callApi(api, formData, apiResultElement);
                 }
                 reader.onerror = (error) => {
                     console.error('Error reading file:', error);
@@ -191,8 +250,8 @@
             }
         }
 
-        async function callApi(api, formData) {
-            console.log(api);
+        async function callApi(api, formData, apiResultElement) {
+            console.log(`Calling API ${api}`);
             try {
                 const response = await fetch(api, {
                     method: "POST",
@@ -201,27 +260,26 @@
                     },
                     body: formData,
                 });
-                var apiResultElement = apiAnamneasyResultElement;
-                if (api == exameasy_api) 
-                    apiResultElement = apiExamResultElement;
                 if (response.ok) {
+                    console.log("Response ok");
                     const result = await response.text();
                     apiResultElement.textContent = result;
                     console.log(`API ${apiResultElement.id} call successful !!`);
                     //console.log("API call successful: result ", result);
                     //alert("File uploaded and API called successfully! Check console for response.");
                 } else {
+                    console.log("Response error");
                     const serverError = await response.text();
                     const errorText = `API call failed: ${response.status} - ${serverError}`
                     //console.error(errorText);
                     alert(errorText);
-                    apiExamResultElement.textContent = errorText;
+                    apiResultElement.textContent = errorText;
                 }
             } catch (error) {
                 const errorText = `API call failed: ${error}`
                 //console.error(errorText);
                 alert(errorText);
-                apiExamResultElement.textContent = errorText;
+                apiResultElement.textContent = errorText;
             } finally {
                 // Re-enable the buttons after the API call is finished (either success or failure).
                 setButtonsState(api, false);
