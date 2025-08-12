@@ -105,16 +105,37 @@
                 if (file.type.startsWith("image/")) {
                     imagePreviewElement.src = URL.createObjectURL(file);
                     imagePreviewElement.style.display = "block";
+                } else if (file.type === 'application/pdf') {
+                    const reader = new FileReader();
+                    reader.onload = async function(event) {
+                        const pdfData = new Uint8Array(event.target.result);
+                        const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
+                        const page = await pdf.getPage(1);
+                        const viewport = page.getViewport({scale: 1.5});
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page.render({canvasContext: context, viewport: viewport}).promise;
+                        imagePreviewElement.src = canvas.toDataURL();
+                        imagePreviewElement.style.display = "block";
+                    };
+                    reader.readAsArrayBuffer(file);
                 }
             }
         });
 
         document.getElementById("sendImageFileButton").addEventListener("click", function () {
-            sendFile(exameasy_api, imageFile, SendingType.FILE);
+            sendFileWithWait(exameasy_api, imageFile, SendingType.FILE);
         });
         document.getElementById("sendImageBinaryButton").addEventListener("click", function () {
-            sendFile(exameasy_api, imageFile, SendingType.BINARY);
+            sendFileWithWait(exameasy_api, imageFile, SendingType.BINARY);
         });
+        async function sendFileWithWait(api, file_input, sendingType) {
+            setButtonsState(api, true);
+            await sendFile(api, file_input, sendingType);
+            setButtonsState(api, false);
+        }
 
         document.getElementById("sendImageFolderButton").addEventListener("click", async function () {
             const input = document.createElement('input');
@@ -142,7 +163,7 @@
 
                         const imgElement = fileElement.querySelector('img');
                         if (file.type === 'application/pdf') {
-                            /*const reader = new FileReader();
+                            const reader = new FileReader();
                             reader.onload = async function(event) {
                                 const pdfData = new Uint8Array(event.target.result);
                                 const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
@@ -155,13 +176,12 @@
                                 await page.render({canvasContext: context, viewport: viewport}).promise;
                                 imgElement.src = canvas.toDataURL();
                             };
-                            reader.readAsArrayBuffer(file);*/
+                            reader.readAsArrayBuffer(file);
                         } else {
                             imgElement.src = URL.createObjectURL(file);
                         }
-
                         const apiResultElement = fileElement.querySelector('pre');
-                        await sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);
+                        sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);
                     }
                 }
             };
@@ -176,6 +196,7 @@
                 this.textContent = "Send Image Loop";
                 this.style.backgroundColor = ""; // Reset color
                 console.log("Loop stopped.");
+                setButtonsState(api, false);
             } else {
                 // Start the loop
                 if (!imageFile.files[0]) {
@@ -193,6 +214,7 @@
                 this.style.backgroundColor = "red"; // Indicate it's active
                 console.log("Loop started.");
                 // Send immediately and then every 5 seconds
+                setButtonsState(api, true);
                 sendFile(exameasy_api, imageFile, SendingType.BINARY);
                 loopInterval = setInterval(() => sendFile(exameasy_api, imageFile, SendingType.BINARY), loopIntervalMs);
             }
@@ -211,13 +233,11 @@
         }
 
         async function sendFile(api, file_input, sendingType = SendingType.FILE, apiResultElement = apiExamResultElement) {
-            // Disable buttons to prevent multiple submissions while processing
-            setButtonsState(api, true);
+            // Disable buttons to prevent multiple submissions while processing            
             const file = file_input.files ? file_input.files[0] : file_input;
             if (!file) {
                 alert("Please select a file first.");
                 // Re-enable buttons as the process is aborted
-                setButtonsState(api, false);
                 return;
             }
             apiResultElement.textContent = "Processsando....por favor, espere.";
@@ -241,7 +261,6 @@
                 reader.onerror = (error) => {
                     console.error('Error reading file:', error);
                     // Re-enable buttons on file read error, as the API call won't be made.
-                setButtonsState(api, false);
                 };
                 if (sendingType === SendingType.BINARY) {
                     //formData.append("datatype", SendingType.BINARY);
