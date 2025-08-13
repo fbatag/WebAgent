@@ -8,16 +8,17 @@
     <title>WebAgent</title>
 
     <!-- Widget JavaScript bundle -->
-    <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=pt-BR"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js";
     </script>
 
+    <!-- script src="https://cloud.google.com/ai/gen-app-builder/client?hl=pt-BR"></script -->
+
     <!-- Search widget element is not visible by default -->
     <!-- gen-search-widget configId="3ed46650-16b3-4aa6-9234-1a2d737b3b1c" triggerId="searchWidgetTrigger" authToken="{{ jwt_token }}"-->
-    <gen-search-widget configId="d47b7c6b-e5b1-4b75-b4ee-99981b49cc31" triggerId="searchWidgetTrigger">
-    </gen-search-widget>
+    <!--gen-search-widget configId="d47b7c6b-e5b1-4b75-b4ee-99981b49cc31" triggerId="searchWidgetTrigger">
+    </gen-search-widget-->
     <!--input type="hidden" id="jwt_token" name="jwt_token" value="{{ jwt_token }}"-->
 </head>
 
@@ -25,10 +26,10 @@
     <form id="index_form" action="/" method="POST" enctype="multipart/form-data">
         <b style="float: right; text-align: right;">{{ user_version_info }}</b>
         </br></br>
-        <!-- Element that opens the widget on click. It does not have to be an input -->
-        <div class="form-box">
-            <input placeholder="Mundo real" id="searchWidgetTrigger" />
-        </div>
+        <!-- Element that opens the widget on click. It does not have to be an fileInputElement -->
+        <!--div class="form-box">
+            <fileInputElement placeholder="Mundo real" id="searchWidgetTrigger" />
+        </div-->
         </br></br>
         <div class="form-box">
             <input type="file" id="audioFile" accept="audio/*">
@@ -41,24 +42,12 @@
         </div>
         </br></br>
         <div class="form-box">
-            <!--input type="file" id="imageFile" accept="image/*, application/pdf"-->
-            <input type="file" id="imageFile">
             <button type="button" id="sendImageFileButton">Send Image File</button>
-            <button type="button" id="sendImageBinaryButton">Send Image Binary</button>
             <button type="button" id="sendImageFolderButton">Send Image Folder</button>
-            <button type="button" id="sendImageLoopButton">Send Image Loop</button>
-            <label for="loopIntervalInput">Interval (s):</label>
-            <input type="number" id="loopIntervalInput" value="0" min="0" style="width: 40px;">
-        </div>
-        <div id="imageAndResultVisualization" class="form-box" style="display: flex; gap: 10px;">
-            <div style="flex: 1; overflow-x: auto;">
-                <h3>Image Preview</h3>
-                <img id="image_preview" style="max-width: 100%; height: auto; display: none;" alt="Image preview">
-            </div>
-            <div style="flex: 1; overflow-x: auto;">
-                <h3>API Result</h3>
-                <pre id="exameasyResult" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
-            </div>
+            <button type="button" style="display: none;" id="processAllFilesButton">Process All Files</button>
+            <button type="button" style="display: none;" id="sendImageLoopButton">Send Image Loop</button>
+            <label style="display: none;" for="loopIntervalInput">Interval (s):</label>
+            <input style="display: none;" type="number" id="loopIntervalInput" value="0" min="0" style="width: 40px;">
         </div>
         <div id="image-container"></div>
     </form>
@@ -77,14 +66,14 @@
 
         audioFileInput.addEventListener("change", function () {
             const file = this.files[0];
-            if (file) 
+            if (file)
                 apiAnamneasyResultElement.textContent = "";
         });
         document.getElementById("callAnamneasyButton").addEventListener("click", function () {
-            sendFile(anamneasy_api, audioFileInput);
+            sendFileWithButtonDisabling(anamneasy_api, audioFileInput);
         });
         document.getElementById("callAnamneasyTeleButton").addEventListener("click", function () {
-            sendFile(anamneasy_tele_api, audioFileInput);
+            sendFileWithButtonDisabling(anamneasy_tele_api, audioFileInput);
         });
 
         let isLooping = false;
@@ -93,143 +82,57 @@
             FILE: 'File',
             BINARY: 'Binary'
         };
-        const imageFile = document.getElementById("imageFile");
-        const imagePreviewElement = document.getElementById("image_preview");
-        const apiExamResultElement = document.getElementById("exameasyResult");
 
-        imageFile.addEventListener("change", function () {
-            const file = this.files[0];
-            if (file) {
-                imagePreviewElement.style.display = "none";
-                apiExamResultElement.textContent = "";
-                if (file.type.startsWith("image/")) {
-                    imagePreviewElement.src = URL.createObjectURL(file);
-                    imagePreviewElement.style.display = "block";
-                } else if (file.type === 'application/pdf') {
-                    const reader = new FileReader();
-                    reader.onload = async function(event) {
-                        const pdfData = new Uint8Array(event.target.result);
-                        const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-                        const page = await pdf.getPage(1);
-                        const viewport = page.getViewport({scale: 1.5});
-                        const canvas = document.createElement('canvas');
-                        const context = canvas.getContext('2d');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        await page.render({canvasContext: context, viewport: viewport}).promise;
-                        imagePreviewElement.src = canvas.toDataURL();
-                        imagePreviewElement.style.display = "block";
-                    };
-                    reader.readAsArrayBuffer(file);
-                }
-            }
-        });
+        const imageContainer = document.getElementById('image-container');
+        const fileInputElement = document.createElement('input');
+        fileInputElement.type = 'file';
 
         document.getElementById("sendImageFileButton").addEventListener("click", function () {
-            sendFileWithWait(exameasy_api, imageFile, SendingType.FILE);
+            fileInputElement.webkitdirectory = false;
+            fileInputElement.click();
         });
-        document.getElementById("sendImageBinaryButton").addEventListener("click", function () {
-            sendFileWithWait(exameasy_api, imageFile, SendingType.BINARY);
+
+        document.getElementById("sendImageFolderButton").addEventListener("click", async function () {
+            fileInputElement.webkitdirectory = true;
+            fileInputElement.click();
         });
-        async function sendFileWithWait(api, file_input, sendingType) {
+
+        fileInputElement.onchange = async e => {
+            const files = e.target.files;
+            //imageContainer.innerHTML = ''; // Clear previous results
+            for (const file of files) {
+                if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+                    loadFile(file)
+                }
+            }
+        };
+
+        function loadFile(file) {
+            const fileDivElement = createFileDivElement(file);
+            imageContainer.appendChild(fileDivElement);
+            showImageFile(fileDivElement, file);
+            const apiResultElement = fileDivElement.querySelector('pre');
+            sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);
+            const sendButton = fileDivElement.querySelector('.send-file-button');
+            sendButton.addEventListener('click', sendThisFile);
+        }
+
+        async function sendThisFile(event) {
+            try {
+                console.log(event)
+                //console.log(apiResultElement)
+                alert("wait a minute")
+            }
+            catch (error) {
+                alert("not good call from here", error)
+            }
+            //sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);            
+        }
+
+        async function sendFileWithButtonDisabling(api, file_input, sendingType) {
             setButtonsState(api, true);
             await sendFile(api, file_input, sendingType);
             setButtonsState(api, false);
-        }
-
-        document.getElementById("sendImageFolderButton").addEventListener("click", async function () {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.webkitdirectory = true;
-            input.onchange = async e => {
-                const files = e.target.files;
-                const imageContainer = document.getElementById('image-container');
-                imageContainer.innerHTML = ''; // Clear previous results
-                for (const file of files) {
-                    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
-                        const fileElement = document.createElement('div');
-                        fileElement.className = 'image-and-result-visualization';
-                        fileElement.innerHTML = `
-                            <div style="flex: 1; overflow-x: auto;">
-                                <h3>${file.webkitRelativePath} - Image Preview</h3>
-                                <img style="max-width: 100%; height: auto;" alt="${file.name}">
-                            </div>
-                            <div style="flex: 1; overflow-x: auto;">
-                                <h3>API Result</h3>
-                                <pre style="white-space: pre-wrap; word-wrap: break-word;"></pre>
-                            </div>
-                        `;
-                        imageContainer.appendChild(fileElement);
-
-                        const imgElement = fileElement.querySelector('img');
-                        if (file.type === 'application/pdf') {
-                            const reader = new FileReader();
-                            reader.onload = async function(event) {
-                                const pdfData = new Uint8Array(event.target.result);
-                                const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-                                const page = await pdf.getPage(1);
-                                const viewport = page.getViewport({scale: 1.5});
-                                const canvas = document.createElement('canvas');
-                                const context = canvas.getContext('2d');
-                                canvas.height = viewport.height;
-                                canvas.width = viewport.width;
-                                await page.render({canvasContext: context, viewport: viewport}).promise;
-                                imgElement.src = canvas.toDataURL();
-                            };
-                            reader.readAsArrayBuffer(file);
-                        } else {
-                            imgElement.src = URL.createObjectURL(file);
-                        }
-                        const apiResultElement = fileElement.querySelector('pre');
-                        sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);
-                    }
-                }
-            };
-            input.click();
-        });
-        document.getElementById("sendImageLoopButton").addEventListener("click", function () {
-            if (isLooping) {
-                // Stop the loop
-                clearInterval(loopInterval);
-                loopInterval = null;
-                isLooping = false;
-                this.textContent = "Send Image Loop";
-                this.style.backgroundColor = ""; // Reset color
-                console.log("Loop stopped.");
-                setButtonsState(api, false);
-            } else {
-                // Start the loop
-                if (!imageFile.files[0]) {
-                    alert("Please select an image file first.");
-                    return;
-                }
-                const loopIntervalValue = document.getElementById("loopIntervalInput").value;
-                if (!loopIntervalValue || loopIntervalValue < 0) {
-                    alert("Please set a loop interval greater than or equal to 0 second.");
-                    return;
-                }
-                const loopIntervalMs = loopIntervalValue * 1000;
-                isLooping = true;
-                this.textContent = "Stop Loop";
-                this.style.backgroundColor = "red"; // Indicate it's active
-                console.log("Loop started.");
-                // Send immediately and then every 5 seconds
-                setButtonsState(api, true);
-                sendFile(exameasy_api, imageFile, SendingType.BINARY);
-                loopInterval = setInterval(() => sendFile(exameasy_api, imageFile, SendingType.BINARY), loopIntervalMs);
-            }
-        });
-
-        function setButtonsState(api, disabled) {
-            if (api === exameasy_api) {
-                document.getElementById("sendImageFileButton").disabled = disabled;
-                document.getElementById("sendImageBinaryButton").disabled = disabled;
-                document.getElementById("sendImageFolderButton").disabled = disabled;
-                document.getElementById("sendImageLoopButton").disabled = disabled;
-            } else {
-                document.getElementById("callAnamneasyButton").disabled = disabled;
-                document.getElementById("callAnamneasyTeleButton").disabled = disabled;
-            }
         }
 
         async function sendFile(api, file_input, sendingType = SendingType.FILE, apiResultElement = apiExamResultElement) {
@@ -289,7 +192,7 @@
                 } else {
                     console.log("Response error");
                     const serverError = await response.text();
-                    const errorText = `API call failed: ${response.status} - ${serverError}`
+                    const errorText = `API response error: ${response.status} - ${serverError}`
                     //console.error(errorText);
                     alert(errorText);
                     apiResultElement.textContent = errorText;
@@ -299,13 +202,102 @@
                 //console.error(errorText);
                 alert(errorText);
                 apiResultElement.textContent = errorText;
-            } finally {
-                // Re-enable the buttons after the API call is finished (either success or failure).
-                setButtonsState(api, false);
             }
         }
 
-        // Assume you have <input type="file" id="fileInput"> in your HTML
+        function createFileDivElement(file) {
+            const fileDivElement = document.createElement('div');
+            fileDivElement.className = 'image-and-result-visualization';
+            var filename = file.name;
+            if (fileInputElement.webkitdirectory)
+                filename = file.webkitRelativePath;
+            fileDivElement.innerHTML = `
+                                <div style="flex: 1; overflow-x: auto;">
+                                    <h3>${filename}</h3>
+                                    <img style="max-width: 100%; height: auto;" alt="${file.name}">
+                                    <button class="send-file-button">Send File</button>
+                                </div>
+                                <div style="flex: 1; overflow-x: auto;">
+                                    <h3>API Result</h3>
+                                    <pre style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                                </div>
+                            `;
+            return fileDivElement;
+        }
+        function showImageFile(fileDivElement, file) {
+            const imgElement = fileDivElement.querySelector('img');
+            if (file.type === 'application/pdf') {
+                const reader = new FileReader();
+                reader.onload = async function (event) {
+                    const pdfData = new Uint8Array(event.target.result);
+                    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+                    const page = await pdf.getPage(1);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    imgElement.src = canvas.toDataURL();
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                imgElement.src = URL.createObjectURL(file);
+            }
+        }
+
+        function setButtonsState(api, disabled) {
+            if (api === exameasy_api) {
+                document.getElementById("sendImageFileButton").disabled = disabled;
+                document.getElementById("sendImageFolderButton").disabled = disabled;
+            } else {
+                document.getElementById("callAnamneasyButton").disabled = disabled;
+                document.getElementById("callAnamneasyTeleButton").disabled = disabled;
+            }
+        }
+
+        document.getElementById("sendImageLoopButton").addEventListener("click", function () {
+            if (isLooping) {
+                // Stop the loop
+                clearInterval(loopInterval);
+                loopInterval = null;
+                isLooping = false;
+                this.textContent = "Send Image Loop";
+                this.style.backgroundColor = ""; // Reset color
+                console.log("Loop stopped.");
+                setButtonsState(api, false);
+            } else {
+                // Start the loop
+                if (!imageFile.files[0]) {
+                    alert("Please select an image file first.");
+                    return;
+                }
+                const loopIntervalValue = document.getElementById("loopIntervalInput").value;
+                if (!loopIntervalValue || loopIntervalValue < 0) {
+                    alert("Please set a loop interval greater than or equal to 0 second.");
+                    return;
+                }
+                setButtonsState(api, true);
+                const loopIntervalMs = loopIntervalValue * 1000;
+                isLooping = true;
+                this.textContent = "Stop Loop";
+                this.style.backgroundColor = "red"; // Indicate it's active
+                console.log("Loop started.");
+                // Send immediately and then every 5 seconds
+                sendFile(exameasy_api, imageFile, SendingType.BINARY);
+                loopInterval = setInterval(() => sendFile(exameasy_api, imageFile, SendingType.BINARY), loopIntervalMs);
+            }
+        });
+
+        document.getElementById("processAllFilesButton").addEventListener("click", async function () {
+            const fileDivElements = document.querySelectorAll('.image-and-result-visualization');
+            for (const fileDivElement of fileDivElements) {
+                const sendButton = fileDivElement.querySelector('.send-file-button');
+                sendButton.click();
+            }
+        });
+
+        // Assume you have <fileInputElement type="file" id="fileInput"> in your HTML
 
         // Ask the authorization token for the application
         // Set authorization token.
