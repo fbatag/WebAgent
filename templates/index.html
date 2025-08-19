@@ -44,7 +44,7 @@
         <div class="form-box">
             <button type="button" id="loadImageFileButton">Carregar Imagem/PDF</button>
             <button type="button" id="loadImageFolderButton">Carregar pasta</button>
-            <button type="button" style="display: none;" id="processAllFilesButton">Process All Files</button>
+            <button type="button" id="processAllFilesButton">Process All Files</button>
             <button type="button" style="display: none;" id="sendImageLoopButton">Send Image Loop</button>
             <label style="display: none;" for="loopIntervalInput">Interval (s):</label>
             <input style="display: none;" type="number" id="loopIntervalInput" value="0" min="0" style="width: 40px;">
@@ -249,8 +249,8 @@
         function setButtonsState(api, disabled, sendButton = null) {
             if (api === exameasy_api) {
                 sendButton.disabled = disabled;
-                document.getElementById("loadImageFileButton").disabled = disabled;
-                document.getElementById("loadImageFolderButton").disabled = disabled;
+                //document.getElementById("loadImageFileButton").disabled = disabled;
+                //document.getElementById("loadImageFolderButton").disabled = disabled;
             } else {
                 document.getElementById("callAnamneasyButton").disabled = disabled;
                 document.getElementById("callAnamneasyTeleButton").disabled = disabled;
