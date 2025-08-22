@@ -80,6 +80,7 @@
         });
         async function sendFileWithButtonDisabling(api, file_input, sendingType, apiResultElement = null, sendButton = null) {
             setButtonsState(api, true, sendButton);
+            apiResultElement.textContent = "Processsando....por favor, espere.";
             await sendFile(api, file_input, sendingType, apiResultElement);
             setButtonsState(api, false, sendButton);
         }
@@ -118,32 +119,55 @@
             }
         };
 
+        function getField(jsonString) {
+            try {
+                const data = JSON.parse(jsonString);
+                return data.list[0].guideType;
+            } catch (error) {
+                console.error("Erro ao analisar a string JSON:", error);
+            }
+            return "none";
+        }
+
         async function processFile(file, fileDivElement, sendButton, deleteButton) {
             if (sendButton.textContent == "Pare") {
                 sendButton.style.backgroundColor = ""; // Reset color
                 sendButton.disabled = true;
                 return;
             }
+            const apiResultElement = fileDivElement.querySelector('pre');
+            const repeatsElem = fileDivElement.querySelector('.repeats');
+            const intervalElem = fileDivElement.querySelector('.interval');
             try {
-                const apiResultElement = fileDivElement.querySelector('pre');
-                const repeats = parseInt(fileDivElement.querySelector('.repeats').value, 10) || 1;
-                const interval = (parseInt(fileDivElement.querySelector('.interval').value, 10) || 0) * 1000;
-                console.log(`File: ${file.name}, Repeats: ${repeats}, Interval: ${interval}ms`);
+                const repeats = parseInt(repeatsElem.value, 10) || 1;
+
                 deleteButton.disabled = true;
+                repeatsElem.disabled = true;
+
+                processAllFilesButton.disabled = true;
                 loadImageFolderButton.disabled = true;
                 loadImageFileButton.disabled = true;
-                processAllFilesButton.disabled = true;
                 if (repeats == 1) sendButton.disabled = true;
                 else {
                     sendButton.textContent = "Pare";
                     sendButton.style.backgroundColor = "red";
                 }
                 for (let i = 0; i < repeats; i++) {
+                    console.log(`File: ${file.name}, Repeat: ${i + 1}/${repeats} Interval: ${interval}s`);
+                    apiResultElement.textContent = `Processsando ${i + 1}/${repeats} por favor, espere.....`;
                     await sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);
-                    if (sendButton.disabled) break;
+                    const guideType = getField(apiResultElement.textContent);
+                    console.log(guideType)
+                    if (guideType != "sadt" && guideType != "outro") {
+                        alert(apiResultElement.textContent);
+                        apiResultElement.textContent = `${guideType}\nRepet.: ${i + 1}/${repeats}\n${apiResultElement.textContent}`;
+                        break;
+                    }
+                    var interval = (parseInt(intervalElem.value, 10) || 0) * 1000;
                     if (i < repeats && !sendButton.disabled && interval > 0) {
                         await new Promise(resolve => setTimeout(resolve, interval));
                     }
+                    //apiResultElement.textContent = `${guideType}\nRepet.: ${i + 1}/${repeats}\n${apiResultElement.textContent}`;
                     if (sendButton.disabled) break;
                 }
             }
@@ -152,13 +176,14 @@
                 apiResultElement.textContent = error;
             }
             finally {
+                deleteButton.disabled = false;
                 sendButton.textContent = "Lê guia";
                 sendButton.style.backgroundColor = ""; // Reset color
                 sendButton.disabled = false;
-                deleteButton.disabled = false;
+                repeatsElem.disabled = false;
+                processAllFilesButton.disabled = false;
                 loadImageFolderButton.disabled = false;
                 loadImageFileButton.disabled = false;
-                processAllFilesButton.disabled = false;
             }
         }
 
@@ -229,7 +254,6 @@
                 // Re-enable buttons as the process is aborted
                 return;
             }
-            apiResultElement.textContent = "Processsando....por favor, espere.";
             console.log("File ", file.name, " type: ", file.type, " size: ", file.size);
             const formData = new FormData();
             if (sendingType === SendingType.FILE) {
@@ -271,11 +295,8 @@
                 if (response.ok) {
                     console.log("Response ok");
                     const result = await response.text();
-                    apiResultElement.textContent = result;
-                    if (result.toLowerCase().includes("ilegivel")) {
-                        alert(result);
-                    }
                     console.log(`API ${apiResultElement.id} call successful !!`);
+                    apiResultElement.textContent = result;
                     //console.log("API call successful: result ", result);
                     //alert("File uploaded and API called successfully! Check console for response.");
                 } else {
@@ -294,16 +315,13 @@
             }
         }
 
-        loadImageFolderButton.addEventListener("click", clickSendFileButtons);
-        async function clickSendFileButtons() {
-            console.log("clickSendFileButtons");
+        document.getElementById("processAllFilesButton").addEventListener("click", async function () {
             const fileDivElements = document.querySelectorAll('.image-and-result-visualization');
             for (const fileDivElement of fileDivElements) {
                 const sendButton = fileDivElement.querySelector('.send-file-button');
                 sendButton.click();
             }
-        }
-        // Assume you have <fileInputElement type="file" id="fileInput"> in your HTML
+        });
 
         // Ask the authorization token for the application
         // Set authorization token.
