@@ -17,7 +17,7 @@ app = Flask(__name__)
 timezone = None
 
 def get_user_version_info():
-    return "User: " + get_iap_user() + " -  Version: 1.0.0"
+    return "User: " + get_iap_user() + " -  Version: 1.0.1"
 
 @app.route("/getAuthToken", methods=["GET"])
 def getSignedUrl():
