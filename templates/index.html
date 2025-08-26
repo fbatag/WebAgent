@@ -72,20 +72,28 @@
             document.getElementById("callAnamneasyTeleButton").disabled = disabled;
         }
         document.getElementById("callAnamneasyButton").addEventListener("click", function () {
-            sendFileWithButtonDisabling(audioFileInput);
+            sendFileWithButtonDisabling(anamneasy_api);
         });
         document.getElementById("callAnamneasyTeleButton").addEventListener("click", function () {
-            sendFileWithButtonDisabling(audioFileInput);
+            sendFileWithButtonDisabling(anamneasy_tele_api);
         });
-        async function sendFileWithButtonDisabling(api, file_input, sendingType, apiResultElement = null, sendButton = null) {
+        async function sendFileWithButtonDisabling(api) {
+            const file = audioFileInput.files[0];
+            if (!file) {
+                alert("Please select a file first.");
+                return null;
+            }
             setButtonsState(api, true, sendButton);
-            apiResultElement.textContent = "Processsando....por favor, espere.";
-            await sendFile(api, file_input, sendingType, apiResultElement);
+            apiAnamneasyResultElement.textContent = "Processsando....por favor, espere.";
+            try {
+                const result = await sendFile(api, file);
+                apiAnamneasyResultElement.textContent = result;
+            } catch (error) {
+                alert("not good call from here: " + error)
+            }
             setButtonsState(api, false, sendButton);
         }
 
-        let isLooping = false;
-        let loopInterval = null;
         const SendingType = {
             FILE: 'File',
             BINARY: 'Binary'
@@ -110,7 +118,7 @@
 
         fileInputElement.onchange = async e => {
             const files = e.target.files;
-            //imageContainer.innerHTML = ''; // Clear previous results
+            //imageContainer.innerHTML = ''; // Clear previous results - for now, accumulating. Delete button can be used or reload the page
             for (const file of files) {
                 if (file.type.startsWith('image/') || file.type === 'application/pdf') {
                     loadFile(file)
@@ -128,73 +136,79 @@
             return "none";
         }
 
-        async function processFile(file, fileDivElement, sendButton, deleteButton) {
+        async function processFile(file, fileDivElement, sendButton, deleteButton, apiResultElement, errorLogElement, repeatsElem, intervalElem) {
             if (sendButton.textContent == "Pare") {
                 sendButton.style.backgroundColor = ""; // Reset color
                 sendButton.disabled = true;
                 return;
             }
-            const apiResultElement = fileDivElement.querySelector('pre');
-            const repeatsElem = fileDivElement.querySelector('.repeats');
-            const intervalElem = fileDivElement.querySelector('.interval');
-            try {
-                const repeats = parseInt(repeatsElem.value, 10) || 1;
-
-                deleteButton.disabled = true;
-                repeatsElem.disabled = true;
-
-                processAllFilesButton.disabled = true;
-                loadImageFolderButton.disabled = true;
-                loadImageFileButton.disabled = true;
-                if (repeats == 1) sendButton.disabled = true;
-                else {
-                    sendButton.textContent = "Pare";
-                    sendButton.style.backgroundColor = "red";
-                }
-                for (let i = 0; i < repeats; i++) {
-                    console.log(`File: ${file.name}, Repeat: ${i + 1}/${repeats} Interval: ${interval}s`);
-                    apiResultElement.textContent = `Processsando ${i + 1}/${repeats} por favor, espere.....`;
-                    await sendFile(exameasy_api, file, SendingType.FILE, apiResultElement);
-                    const guideType = getField(apiResultElement.textContent);
-                    console.log(guideType)
+            errorLogElement.textContent = "";
+            apiResultElement.textContent = "";
+            const repeats = parseInt(repeatsElem.value, 10) || 1;
+            deleteButton.disabled = true;
+            repeatsElem.disabled = true;
+            processAllFilesButton.disabled = true;
+            loadImageFolderButton.disabled = true;
+            loadImageFileButton.disabled = true;
+            if (repeats == 1) sendButton.disabled = true;
+            else {
+                sendButton.textContent = "Pare";
+                sendButton.style.backgroundColor = "red";
+            }
+            let ilegiveis = 0
+            for (let i = 0; i < repeats; i++) {
+                console.log(`File: ${file.name}, Repeat: ${i + 1}/${repeats}`);
+                apiResultElement.textContent = `Processsando ${i + 1}/${repeats} por favor, espere.....`;
+                try {
+                    const result = await sendFile(exameasy_api, file);
+                    apiResultElement.textContent = `Resp.: ${i + 1}/${repeats}\n` + result;
+                    const guideType = getField(result);
                     if (guideType != "sadt" && guideType != "outro") {
-                        alert(apiResultElement.textContent);
-                        apiResultElement.textContent = `${guideType}\nRepet.: ${i + 1}/${repeats}\n${apiResultElement.textContent}`;
-                        break;
+                        ilegiveis++;
+                        errorLogElement.textContent += `Repet.: ${i + 1}/${repeats}: ${guideType} - ilegiveis: ${ilegiveis}\n`;
                     }
-                    var interval = (parseInt(intervalElem.value, 10) || 0) * 1000;
-                    if (i < repeats && !sendButton.disabled && interval > 0) {
-                        await new Promise(resolve => setTimeout(resolve, interval));
-                    }
-                    //apiResultElement.textContent = `${guideType}\nRepet.: ${i + 1}/${repeats}\n${apiResultElement.textContent}`;
-                    if (sendButton.disabled) break;
                 }
+                catch (error) {
+                    errorLogElement.textContent += `Repet.: ${i + 1}/${repeats}: ${error}\n`;
+                    apiResultElement.textContent = "";
+                }
+                var interval = (parseInt(intervalElem.value, 10) || 0) * 1000;
+                console.log(`File: ${file.name}, Repeat: ${i + 1}/${repeats} Interval: ${interval}s`);
+                if (i < repeats && !sendButton.disabled && interval > 0) {
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                }
+                //apiResultElement.textContent = `${guideType}\nRepet.: ${i + 1}/${repeats}\n${apiResultElement.textContent}`;
+                if (sendButton.disabled) break;
             }
-            catch (error) {
-                alert("not good call from here", error)
-                apiResultElement.textContent = error;
-            }
-            finally {
-                deleteButton.disabled = false;
-                sendButton.textContent = "Lê guia";
-                sendButton.style.backgroundColor = ""; // Reset color
-                sendButton.disabled = false;
-                repeatsElem.disabled = false;
-                processAllFilesButton.disabled = false;
-                loadImageFolderButton.disabled = false;
-                loadImageFileButton.disabled = false;
-            }
+            deleteButton.disabled = false;
+            sendButton.textContent = "Lê guia";
+            sendButton.style.backgroundColor = ""; // Reset color
+            sendButton.disabled = false;
+            repeatsElem.disabled = false;
+            processAllFilesButton.disabled = false;
+            loadImageFolderButton.disabled = false;
+            loadImageFileButton.disabled = false;
         }
 
         function loadFile(file) {
             const fileDivElement = createFileDivElement(file);
             imageContainer.appendChild(fileDivElement);
             showImageFile(fileDivElement, file);
+            const apiResultElement = fileDivElement.querySelector('.api-result');
+            const errorLogElement = fileDivElement.querySelector('.error-log');
+            const errorDiv = fileDivElement.querySelector('.error-div');
             const sendButton = fileDivElement.querySelector('.send-file-button');
             const deleteButton = fileDivElement.querySelector('.delete-element-button');
-            sendButton.addEventListener('click', () => processFile(file, fileDivElement, sendButton, deleteButton));
+            const repeatsElem = fileDivElement.querySelector('.repeats');
+            const intervalElem = fileDivElement.querySelector('.interval');
+            sendButton.addEventListener('click', () => processFile(
+                file, fileDivElement, sendButton, deleteButton, apiResultElement, errorLogElement, repeatsElem, intervalElem));
             deleteButton.addEventListener('click', () => {
                 fileDivElement.remove();
+            });
+            const showErrorCheckbox = fileDivElement.querySelector('.showErrorCheckbox');
+            showErrorCheckbox.addEventListener('change', () => {
+                errorDiv.style.display = showErrorCheckbox.checked ? 'block' : 'none';
             });
         }
 
@@ -212,12 +226,19 @@
                                     <input type="number" class="repeats" id="repeats-${filename}" value="1" min="1" style="width: 40px;">
                                     <label for="interval-${filename}">Intervalo:</label>
                                     <input type="number" class="interval" id="interval-${filename}" value="0" min="0" style="width: 40px;">
-                                    <button type="button" class="delete-element-button">Deleta</button></br>
+                                    <button type="button" class="delete-element-button">Deleta</button>
+                                    <input type="checkbox" class="showErrorCheckbox" checked>
+                                    <label for="showErrorCheckbox">Show Error Log</label></br>
                                     <img style="max-width: 100%; height: auto;" alt="${file.name}">
                                 </div>
                                 <div style="flex: 1; overflow-x: auto;">
                                     <h3>API Result</h3>
-                                    <pre style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                                    <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                                </div>
+                                <div class="error-div" style="flex: 1; overflow-x: auto;">
+                                    <h3>Error</h3>
+
+                                    <pre class="error-log" style="white-space: pre-wrap; word-wrap: break-word;"></pre
                                 </div>
                             `;
             return fileDivElement;
@@ -245,19 +266,13 @@
             }
         }
 
-        async function sendFile(api, file_input, sendingType = SendingType.FILE, apiResultElement) {
+        async function sendFile(api, file, sendingType = SendingType.FILE) {
             // Disable buttons to prevent multiple submissions while processing            
-            const file = file_input.files ? file_input.files[0] : file_input;
-            if (!file) {
-                alert("Please select a file first.");
-                // Re-enable buttons as the process is aborted
-                return;
-            }
             console.log("File ", file.name, " type: ", file.type, " size: ", file.size);
             const formData = new FormData();
             if (sendingType === SendingType.FILE) {
                 formData.append(file.name, file);
-                await callApi(api, formData, apiResultElement);
+                return await callApi(api, formData);
             } else {
                 const reader = new FileReader();
                 reader.onloadend = async () => {
@@ -268,11 +283,13 @@
                         const blob = new Blob([reader.result], { type: "application/octet-stream" });
                         formData.append(file.name, blob);
                     }
-                    await callApi(api, formData, apiResultElement);
+                    return await callApi(api, formData);
                 }
                 reader.onerror = (error) => {
-                    console.error('Error reading file:', error);
+                    errorText = 'Error reading file:' + error;
+                    console.error(errorText);
                     // Re-enable buttons on file read error, as the API call won't be made.
+                    throw errorText;
                 };
                 if (sendingType === SendingType.BINARY) {
                     //formData.append("datatype", SendingType.BINARY);
@@ -281,36 +298,23 @@
             }
         }
 
-        async function callApi(api, formData, apiResultElement) {
+        async function callApi(api, formData) {
             console.log(`Calling API ${api}`);
-            try {
-                const response = await fetch(api, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    },
-                    body: formData,
-                });
-                if (response.ok) {
-                    console.log("Response ok");
-                    const result = await response.text();
-                    console.log(`API ${apiResultElement.id} call successful !!`);
-                    apiResultElement.textContent = result;
-                    //console.log("API call successful: result ", result);
-                    //alert("File uploaded and API called successfully! Check console for response.");
-                } else {
-                    console.log("Response error");
-                    const serverError = await response.text();
-                    const errorText = `API response error: ${response.status} - ${serverError}`
-                    //console.error(errorText);
-                    alert(errorText);
-                    apiResultElement.textContent = errorText;
-                }
-            } catch (error) {
-                const errorText = `API call failed: ${error}`
-                //console.error(errorText);
-                alert(errorText);
-                apiResultElement.textContent = errorText;
+            const response = await fetch(api, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                body: formData,
+            });
+            if (response.ok) {
+                console.log("Response ok");
+                return await response.text();
+            } else {
+                console.log("Response error");
+                const serverError = await response.text();
+                const errorText = `API response error: ${response.status} - ${serverError}`
+                throw errorText;
             }
         }
 
