@@ -136,7 +136,7 @@
             return "none";
         }
 
-        async function processFile(file, fileDivElement, sendButton, deleteButton, apiResultElement, errorLogElement, repeatsElem, intervalElem) {
+        async function processFile(file, fileDivElement, sendButton, deleteButton, apiResultElement, docLogElement, errorLogElement, repeatsElem, intervalElem) {
             if (sendButton.textContent == "Pare") {
                 sendButton.style.backgroundColor = ""; // Reset color
                 sendButton.disabled = true;
@@ -204,7 +204,7 @@
             const repeatsElem = fileDivElement.querySelector('.repeats');
             const intervalElem = fileDivElement.querySelector('.interval');
             sendButton.addEventListener('click', () => processFile(
-                file, fileDivElement, sendButton, deleteButton, apiResultElement, errorLogElement, repeatsElem, intervalElem));
+                file, fileDivElement, sendButton, deleteButton, apiResultElement, docLogElement, errorLogElement, repeatsElem, intervalElem));
             deleteButton.addEventListener('click', () => {
                 fileDivElement.remove();
             });
