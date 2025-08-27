@@ -144,6 +144,7 @@
             }
             errorLogElement.textContent = "";
             apiResultElement.textContent = "";
+            docLogElement.textContent = "";
             const repeats = parseInt(repeatsElem.value, 10) || 1;
             deleteButton.disabled = true;
             repeatsElem.disabled = true;
@@ -165,7 +166,7 @@
                     const guideType = getField(result);
                     if (guideType != "sadt" && guideType != "outro") {
                         ilegiveis++;
-                        errorLogElement.textContent += `Repet.: ${i + 1}/${repeats}: ${guideType} - ilegiveis: ${ilegiveis}\n`;
+                        docLogElement.textContent += `Repet.: ${i + 1}/${repeats}: ${guideType} - ilegiveis: ${ilegiveis}\n`;
                     }
                 }
                 catch (error) {
@@ -196,6 +197,7 @@
             showImageFile(fileDivElement, file);
             const apiResultElement = fileDivElement.querySelector('.api-result');
             const errorLogElement = fileDivElement.querySelector('.error-log');
+            const docLogElement = fileDivElement.querySelector('.doc-log');
             const errorDiv = fileDivElement.querySelector('.error-div');
             const sendButton = fileDivElement.querySelector('.send-file-button');
             const deleteButton = fileDivElement.querySelector('.delete-element-button');
@@ -236,9 +238,10 @@
                                     <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                                 </div>
                                 <div class="error-div" style="flex: 1; overflow-x: auto;">
-                                    <h3>Error</h3>
-
-                                    <pre class="error-log" style="white-space: pre-wrap; word-wrap: break-word;"></pre
+                                    <h3>Log docs ilegiveis</h3>
+                                    <pre class="doc-log" style="white-space: pre-wrap; word-wrap: break-word;"></pre></br>
+                                    <h3>Log erros:</h3>
+                                    <pre class="error-log" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
                                 </div>
                             `;
             return fileDivElement;
