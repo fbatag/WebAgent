@@ -45,6 +45,15 @@
             <button type="button" id="loadImageFileButton">Carregar Imagem/PDF</button>
             <button type="button" id="loadImageFolderButton">Carregar pasta</button>
             <button type="button" id="processAllFilesButton" style="display: none;">Lê todos</button>
+            <span id="doc-type-all-container" style="display: none;">
+                &ensp;&ensp;
+                <input type="text" id="doc-type-all" style="width: 40px;">
+                <button type="button" id="set-doc-type-all-button">Aplica a todos</button>
+            </span>
+        </div>
+        <div id="master-checkbox-container" style="display: none;">
+            <input type="checkbox" id="masterShowErrorCheckbox" checked>
+            <label for="masterShowErrorCheckbox">Mostrar todos logs</label>
         </div>
         <div id="image-container"></div>
     </form>
@@ -192,15 +201,18 @@
             loadImageFileButton.disabled = false;
         }
 
-        function updateProcessAllFilesButtonVisibility() {
+        function updateDynamicElementsVisibility() {
             const fileDivElements = document.querySelectorAll('.image-and-result-visualization');
-            processAllFilesButton.style.display = fileDivElements.length > 0 ? 'inline-block' : 'none';
+            const hasFiles = fileDivElements.length > 0;
+            processAllFilesButton.style.display = hasFiles ? 'inline-block' : 'none';
+            document.getElementById('master-checkbox-container').style.display = hasFiles ? 'block' : 'none';
+            document.getElementById('doc-type-all-container').style.display = hasFiles ? 'inline-block' : 'none';
         }
 
         function loadFile(file) {
             const fileDivElement = createFileDivElement(file);
             imageContainer.appendChild(fileDivElement);
-            updateProcessAllFilesButtonVisibility();
+            updateDynamicElementsVisibility();
             showImageFile(fileDivElement, file);
             const errorDiv = fileDivElement.querySelector('.error-div');
             const sendButton = fileDivElement.querySelector('.send-file-button');
@@ -215,7 +227,7 @@
                 fileDivElement.querySelector('.interval')));
             deleteButton.addEventListener('click', () => {
                 fileDivElement.remove();
-                updateProcessAllFilesButtonVisibility();
+                updateDynamicElementsVisibility();
             });
             const showErrorCheckbox = fileDivElement.querySelector('.showErrorCheckbox');
             showErrorCheckbox.addEventListener('change', () => {
@@ -339,6 +351,27 @@
                 const sendButton = fileDivElement.querySelector('.send-file-button');
                 sendButton.click();
             }
+        });
+
+        document.getElementById("set-doc-type-all-button").addEventListener("click", function () {
+            const allDocType = document.getElementById("doc-type-all").value;
+            const docTypeInputs = document.querySelectorAll('.doc-type');
+            docTypeInputs.forEach(input => {
+                input.value = allDocType;
+            });
+        });
+
+        document.getElementById('masterShowErrorCheckbox').addEventListener('change', function() {
+            const isChecked = this.checked;
+            const allCheckboxes = document.querySelectorAll('.showErrorCheckbox');
+            allCheckboxes.forEach(checkbox => {
+                if (checkbox.checked !== isChecked) {
+                    checkbox.checked = isChecked;
+                    // Manually trigger the change event for each checkbox
+                    const event = new Event('change');
+                    checkbox.dispatchEvent(event);
+                }
+            });
         });
 
         // Ask the authorization token for the application
