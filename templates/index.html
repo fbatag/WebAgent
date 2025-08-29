@@ -44,8 +44,7 @@
         <div class="form-box">
             <button type="button" id="loadImageFileButton">Carregar Imagem/PDF</button>
             <button type="button" id="loadImageFolderButton">Carregar pasta</button>
-            <button type="button" id="processAllFilesButton">Lê todos</button>
-            <!-- style="display: none;" -->
+            <button type="button" id="processAllFilesButton" style="display: none;">Lê todos</button>
         </div>
         <div id="image-container"></div>
     </form>
@@ -193,9 +192,15 @@
             loadImageFileButton.disabled = false;
         }
 
+        function updateProcessAllFilesButtonVisibility() {
+            const fileDivElements = document.querySelectorAll('.image-and-result-visualization');
+            processAllFilesButton.style.display = fileDivElements.length > 0 ? 'inline-block' : 'none';
+        }
+
         function loadFile(file) {
             const fileDivElement = createFileDivElement(file);
             imageContainer.appendChild(fileDivElement);
+            updateProcessAllFilesButtonVisibility();
             showImageFile(fileDivElement, file);
             const errorDiv = fileDivElement.querySelector('.error-div');
             const sendButton = fileDivElement.querySelector('.send-file-button');
@@ -210,6 +215,7 @@
                 fileDivElement.querySelector('.interval')));
             deleteButton.addEventListener('click', () => {
                 fileDivElement.remove();
+                updateProcessAllFilesButtonVisibility();
             });
             const showErrorCheckbox = fileDivElement.querySelector('.showErrorCheckbox');
             showErrorCheckbox.addEventListener('change', () => {
