@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!docType html>
 <html>
 
 <head>
@@ -54,7 +54,7 @@
         const token = "{{ token }}";
         const anamneasy_api = "{{ anamneasy_api }}";
         const anamneasy_tele_api = "{{ anamneasy_tele_api }}";
-        const exameasy_api = "{{ exameasy_api }}";
+        const document_api = "{{ document_api }}";
 
         //const form = document.querySelector("form");
 
@@ -136,7 +136,7 @@
             return "none";
         }
 
-        async function processFile(file, fileDivElement, sendButton, deleteButton, apiResultElement, docLogElement, errorLogElement, repeatsElem, intervalElem) {
+        async function processFile(file, fileDivElement, sendButton, deleteButton, docTypeText, apiResultElement, docLogElement, errorLogElement, repeatsElem, intervalElem) {
             if (sendButton.textContent == "Pare") {
                 sendButton.style.backgroundColor = ""; // Reset color
                 sendButton.disabled = true;
@@ -158,10 +158,12 @@
             }
             let ilegiveis = 0
             for (let i = 0; i < repeats; i++) {
+                const docType = 
                 console.log(`File: ${file.name}, Repeat: ${i + 1}/${repeats}`);
+
                 apiResultElement.textContent = `Processsando ${i + 1}/${repeats} por favor, espere.....`;
                 try {
-                    const result = await sendFile(exameasy_api, file);
+                    const result = await sendFile(document_api, file, docTypeText.value);
                     apiResultElement.textContent = `Resp.: ${i + 1}/${repeats}\n` + result;
                     const guideType = getField(result);
                     if (guideType != "sadt" && guideType != "outro") {
@@ -195,16 +197,17 @@
             const fileDivElement = createFileDivElement(file);
             imageContainer.appendChild(fileDivElement);
             showImageFile(fileDivElement, file);
-            const apiResultElement = fileDivElement.querySelector('.api-result');
-            const errorLogElement = fileDivElement.querySelector('.error-log');
-            const docLogElement = fileDivElement.querySelector('.doc-log');
             const errorDiv = fileDivElement.querySelector('.error-div');
             const sendButton = fileDivElement.querySelector('.send-file-button');
             const deleteButton = fileDivElement.querySelector('.delete-element-button');
-            const repeatsElem = fileDivElement.querySelector('.repeats');
-            const intervalElem = fileDivElement.querySelector('.interval');
             sendButton.addEventListener('click', () => processFile(
-                file, fileDivElement, sendButton, deleteButton, apiResultElement, docLogElement, errorLogElement, repeatsElem, intervalElem));
+                file, fileDivElement, sendButton, deleteButton, 
+                fileDivElement.querySelector('.doc-type'),
+                fileDivElement.querySelector('.api-result'),
+                fileDivElement.querySelector('.doc-log'),
+                fileDivElement.querySelector('.error-log'),
+                fileDivElement.querySelector('.repeats'),
+                fileDivElement.querySelector('.interval')));
             deleteButton.addEventListener('click', () => {
                 fileDivElement.remove();
             });
@@ -223,14 +226,16 @@
             fileDivElement.innerHTML = `
                                 <div style="flex: 1; overflow-x: auto;">
                                     <h3>${filename}</h3>
-                                    <button type="button" class="send-file-button">Lê guia</button>
+                                    <label for="doc-type-${filename}">Tipo Doc.:</label>
+                                    <input type="text" class="doc-type" id="doc-type-${filename}" name="doc-type-${filename}" style="width: 40px;>&ensp;&ensp;
                                     <label for="repeats-${filename}">Repetições:</label>
-                                    <input type="number" class="repeats" id="repeats-${filename}" value="1" min="1" style="width: 40px;">
+                                    <input type="number" class="repeats" id="repeats-${filename}" value="1" min="1" style="width: 40px;">&ensp;
                                     <label for="interval-${filename}">Intervalo:</label>
-                                    <input type="number" class="interval" id="interval-${filename}" value="0" min="0" style="width: 40px;">
-                                    <button type="button" class="delete-element-button">Deleta</button>
+                                    <input type="number" class="interval" id="interval-${filename}" value="0" min="0" style="width: 40px;">&ensp;
                                     <input type="checkbox" class="showErrorCheckbox" checked>
-                                    <label for="showErrorCheckbox">Show Error Log</label></br>
+                                    <label for="showErrorCheckbox">Show Error Log</label></br></br>
+                                    <button type="button" class="send-file-button">Lê guia</button>&ensp;
+                                    <button type="button" class="delete-element-button">Deleta</button></br></br>
                                     <img style="max-width: 100%; height: auto;" alt="${file.name}">
                                 </div>
                                 <div style="flex: 1; overflow-x: auto;">
@@ -269,10 +274,11 @@
             }
         }
 
-        async function sendFile(api, file, sendingType = SendingType.FILE) {
+        async function sendFile(api, file, docType, sendingType = SendingType.FILE) {
             // Disable buttons to prevent multiple submissions while processing            
             console.log("File ", file.name, " type: ", file.type, " size: ", file.size);
             const formData = new FormData();
+            formData.append("doc-type", docType);
             if (sendingType === SendingType.FILE) {
                 formData.append(file.name, file);
                 return await callApi(api, formData);

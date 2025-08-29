@@ -5,12 +5,12 @@ from imageasylib.utils import getSaAcessToken, get_iap_user, getSignedUrlParam
 print("(RE)LOADING APPLICATION")
 TOKEN = os.environ.get("TOKEN", "TOKEN")
 print(f"TOKEN: {TOKEN}")
-ANAMNEASY_ENDPOINT_API  = os.environ.get("ANAMNEASY_ENDPOINT_API", "https://anamneasy-484116905177.us-central1.run.app/")
+ANAMNEASY_ENDPOINT_API  = os.environ.get("ANAMNEASY_ENDPOINT_API", "http://127.0.0.1:8080")
 print(f"ANAMNEASY_ENDPOINT_API: {ANAMNEASY_ENDPOINT_API}")
-ANAMNEASY_TELE_ENDPOINT_API = os.environ.get("ANAMNEASY_TELE_ENDPOINT_API", "https://anamneasy-tele-484116905177.us-central1.run.app/")
+ANAMNEASY_TELE_ENDPOINT_API = os.environ.get("ANAMNEASY_TELE_ENDPOINT_API", "http://127.0.0.1:8080")
 print(f"ANAMNEASY_TELE_ENDPOINT_API: {ANAMNEASY_TELE_ENDPOINT_API}")
-EXAMEASY_ENDPOINT_API = os.environ.get("EXAMEASY_ENDPOINT_API", "https://exameasy-484116905177.us-central1.run.app/")
-print(f"EXAMEASY_ENDPOINT_API: {EXAMEASY_ENDPOINT_API}")
+DOCUMENT_ENDPOINT_API = os.environ.get("DOCUMENT_ENDPOINT_API", "http://127.0.0.1:8080")
+print(f"DOCUMENT_ENDPOINT_API: {DOCUMENT_ENDPOINT_API}")
 
 
 app = Flask(__name__)
@@ -40,7 +40,7 @@ def renderIndex(page="index.html"):
                            token=TOKEN,
                            anamneasy_api=ANAMNEASY_ENDPOINT_API,
                            anamneasy_tele_api=ANAMNEASY_TELE_ENDPOINT_API,
-                           exameasy_api=EXAMEASY_ENDPOINT_API)
+                           document_api=DOCUMENT_ENDPOINT_API)
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
