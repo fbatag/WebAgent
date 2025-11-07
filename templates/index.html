@@ -91,7 +91,7 @@
                 alert("Please select a file first.");
                 return null;
             }
-            setButtonsState(api, true, sendButton);
+            setButtonsState(true);
             apiAnamneasyResultElement.textContent = "Processsando....por favor, espere.";
             try {
                 const result = await sendFile(api, file);
@@ -99,7 +99,7 @@
             } catch (error) {
                 alert("not good call from here: " + error)
             }
-            setButtonsState(api, false, sendButton);
+            setButtonsState(false);
         }
 
         const SendingType = {
